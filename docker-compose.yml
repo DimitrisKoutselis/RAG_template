@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  rag-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: rag-template-api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      # Application
+      - APP_NAME=${APP_NAME:-RAG Template}
+      - APP_VERSION=${APP_VERSION:-0.1.0}
+      - DEBUG=${DEBUG:-false}
+
+      # RAG Configuration
+      - RAG_IMPLEMENTATION=${RAG_IMPLEMENTATION:-langchain}
+
+      # LLM Configuration
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-1024}
+
+      # Embedding Configuration
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-openai}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-small}
+
+      # Vector Store Configuration
+      - VECTOR_STORE_PROVIDER=${VECTOR_STORE_PROVIDER:-chroma}
+      - CHROMA_PERSIST_DIRECTORY=/app/data/chroma
+      - CHROMA_COLLECTION_NAME=${CHROMA_COLLECTION_NAME:-rag_chunks}
+
+      # Database Configuration
+      - DATABASE_URL=sqlite+aiosqlite:///./data/rag.db
+
+      # API Configuration
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - CORS_ORIGINS=${CORS_ORIGINS:-["*"]}
+
+      # RAG Defaults
+      - DEFAULT_TOP_K=${DEFAULT_TOP_K:-5}
+      - DEFAULT_SIMILARITY_THRESHOLD=${DEFAULT_SIMILARITY_THRESHOLD:-0.7}
+    volumes:
+      # Persist data (database and vector store)
+      - rag-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Development service with hot reload
+  rag-api-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: rag-template-api-dev
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - DEBUG=true
+      - RAG_IMPLEMENTATION=${RAG_IMPLEMENTATION:-langchain}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-small}
+      - DATABASE_URL=sqlite+aiosqlite:///./data/rag.db
+      - CHROMA_PERSIST_DIRECTORY=/app/data/chroma
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    volumes:
+      # Mount source code for development
+      - ./src:/app/src:ro
+      - rag-data-dev:/app/data
+    command: ["uvicorn", "src.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    profiles:
+      - dev
+
+volumes:
+  rag-data:
+    name: rag-template-data
+  rag-data-dev:
+    name: rag-template-data-dev

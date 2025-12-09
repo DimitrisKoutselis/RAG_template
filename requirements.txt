@@ -1,0 +1,29 @@
+# Core
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
+
+# Database
+sqlalchemy>=2.0.0
+aiosqlite>=0.19.0
+
+# LangChain
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-openai>=0.0.5
+langchain-anthropic>=0.1.0
+langchain-community>=0.0.10
+
+# LangGraph
+langgraph>=0.0.20
+
+# Vector Store
+chromadb>=0.4.0
+
+# HTTP Client (for API calls)
+httpx>=0.25.0
+
+# WebSocket
+websockets>=12.0
