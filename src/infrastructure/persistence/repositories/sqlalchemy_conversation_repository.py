@@ -24,7 +24,7 @@ class SQLAlchemyConversationRepository(IConversationRepository):
             model = self._to_model(conversation)
             session.add(model)
             await session.commit()
-            await session.refresh(model)
+            await session.refresh(model, ["messages"])
             return self._to_entity(model)
 
     async def get_by_id(self, conversation_id: UUID) -> Conversation | None:
@@ -59,16 +59,16 @@ class SQLAlchemyConversationRepository(IConversationRepository):
         """Update a conversation."""
         async with self._session_factory() as session:
             result = await session.execute(
-                select(ConversationModel).where(
-                    ConversationModel.id == str(conversation.id)
-                )
+                select(ConversationModel)
+                .options(selectinload(ConversationModel.messages))
+                .where(ConversationModel.id == str(conversation.id))
             )
             model = result.scalar_one_or_none()
             if model:
                 model.title = conversation.title
                 model.updated_at = conversation.updated_at
                 await session.commit()
-                await session.refresh(model)
+                await session.refresh(model, ["messages"])
                 return self._to_entity(model)
             raise ValueError(f"Conversation not found: {conversation.id}")
 

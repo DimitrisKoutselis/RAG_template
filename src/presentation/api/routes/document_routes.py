@@ -9,10 +9,21 @@ from src.presentation.api.schemas.document_schemas import (
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
+# Controller factory - will be set by main.py during app initialization
+_controller_factory: callable = None
+
+
+def set_document_controller_factory(factory: callable) -> None:
+    """Set the controller factory function."""
+    global _controller_factory
+    _controller_factory = factory
+
 
 def get_document_controller() -> DocumentController:
-    """Dependency injection placeholder for document controller."""
-    raise NotImplementedError("Document controller not configured")
+    """Dependency injection for document controller."""
+    if _controller_factory is None:
+        raise NotImplementedError("Document controller not configured")
+    return _controller_factory()
 
 
 @router.post("/", response_model=DocumentResponse, status_code=201)

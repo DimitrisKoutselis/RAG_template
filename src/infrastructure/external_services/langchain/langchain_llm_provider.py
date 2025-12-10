@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 
 from src.application.interfaces.llm_provider import ILLMProvider
@@ -18,7 +19,7 @@ class LangChainLLMProvider(ILLMProvider):
         self._settings = settings
         self._llm = self._create_llm()
 
-    def _create_llm(self) -> ChatOpenAI | ChatAnthropic:
+    def _create_llm(self) -> ChatOpenAI | ChatAnthropic | ChatGoogleGenerativeAI:
         """Create the LangChain LLM instance based on settings."""
         if self._settings.llm_provider == "openai":
             return ChatOpenAI(
@@ -33,6 +34,13 @@ class LangChainLLMProvider(ILLMProvider):
                 temperature=self._settings.llm_temperature,
                 max_tokens=self._settings.llm_max_tokens,
                 api_key=self._settings.anthropic_api_key
+            )
+        elif self._settings.llm_provider == "gemini":
+            return ChatGoogleGenerativeAI(
+                model=self._settings.llm_model,
+                temperature=self._settings.llm_temperature,
+                max_output_tokens=self._settings.llm_max_tokens,
+                google_api_key=self._settings.gemini_api_key
             )
         else:
             raise ValueError(f"Unsupported LLM provider: {self._settings.llm_provider}")

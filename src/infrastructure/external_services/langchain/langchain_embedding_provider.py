@@ -1,3 +1,4 @@
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_openai import OpenAIEmbeddings
 
 from src.application.interfaces.embedding_provider import IEmbeddingProvider
@@ -13,6 +14,8 @@ class LangChainEmbeddingProvider(IEmbeddingProvider):
         "text-embedding-3-small": 1536,
         "text-embedding-3-large": 3072,
         "text-embedding-ada-002": 1536,
+        "models/text-embedding-004": 768,
+        "models/embedding-001": 768,
     }
 
     def __init__(self, settings: Settings) -> None:
@@ -23,12 +26,17 @@ class LangChainEmbeddingProvider(IEmbeddingProvider):
             settings.embedding_model, 1536
         )
 
-    def _create_embeddings(self) -> OpenAIEmbeddings:
+    def _create_embeddings(self) -> OpenAIEmbeddings | GoogleGenerativeAIEmbeddings:
         """Create the LangChain embeddings instance."""
         if self._settings.embedding_provider == "openai":
             return OpenAIEmbeddings(
                 model=self._settings.embedding_model,
                 api_key=self._settings.openai_api_key
+            )
+        elif self._settings.embedding_provider == "gemini":
+            return GoogleGenerativeAIEmbeddings(
+                model=self._settings.embedding_model,
+                google_api_key=self._settings.gemini_api_key
             )
         else:
             raise ValueError(

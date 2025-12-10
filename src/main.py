@@ -26,6 +26,9 @@ from src.infrastructure.external_services.langchain.langchain_rag_engine import 
 from src.infrastructure.external_services.langgraph.langgraph_rag_engine import (
     LangGraphRAGEngine,
 )
+from src.infrastructure.external_services.chunking.file_based_chunking_strategy import (
+    FileBasedChunkingStrategy,
+)
 from src.infrastructure.external_services.vector_stores.chroma_vector_store import (
     ChromaVectorStore,
 )
@@ -97,7 +100,9 @@ class Container:
 
         self.conversation_service = ConversationService()
 
-        self._chunking_strategy: IChunkingStrategy | None = None
+        self._chunking_strategy: IChunkingStrategy | None = FileBasedChunkingStrategy(
+            chunks_directory=settings.chunks_directory
+        )
 
     def set_chunking_strategy(self, strategy: IChunkingStrategy) -> None:
         """Set the chunking strategy for document ingestion."""
@@ -273,9 +278,9 @@ def create_app() -> FastAPI:
     app.add_middleware(ErrorHandlerMiddleware)
     app.add_middleware(LoggingMiddleware)
 
-    document_routes.get_document_controller = get_document_controller
-    chat_routes.get_chat_controller = get_chat_controller
-    conversation_routes.get_conversation_controller = get_conversation_controller
+    document_routes.set_document_controller_factory(get_document_controller)
+    chat_routes.set_chat_controller_factory(get_chat_controller)
+    conversation_routes.set_conversation_controller_factory(get_conversation_controller)
 
     app.include_router(health_routes.router)
     app.include_router(document_routes.router, prefix="/api/v1")
@@ -291,14 +296,22 @@ def main():
     import uvicorn
 
     settings = get_settings()
-    app = create_app()
 
-    uvicorn.run(
-        app,
-        host=settings.api_host,
-        port=settings.api_port,
-        reload=settings.debug
-    )
+    if settings.debug:
+        uvicorn.run(
+            "src.main:create_app",
+            factory=True,
+            host=settings.api_host,
+            port=settings.api_port,
+            reload=True
+        )
+    else:
+        app = create_app()
+        uvicorn.run(
+            app,
+            host=settings.api_host,
+            port=settings.api_port
+        )
 
 
 if __name__ == "__main__":

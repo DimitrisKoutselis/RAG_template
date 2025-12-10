@@ -8,10 +8,21 @@ from src.presentation.api.schemas.conversation_schemas import (
 
 router = APIRouter(prefix="/conversations", tags=["Conversations"])
 
+# Controller factory - will be set by main.py during app initialization
+_controller_factory: callable = None
+
+
+def set_conversation_controller_factory(factory: callable) -> None:
+    """Set the controller factory function."""
+    global _controller_factory
+    _controller_factory = factory
+
 
 def get_conversation_controller() -> ConversationController:
-    """Dependency injection placeholder for conversation controller."""
-    raise NotImplementedError("Conversation controller not configured")
+    """Dependency injection for conversation controller."""
+    if _controller_factory is None:
+        raise NotImplementedError("Conversation controller not configured")
+    return _controller_factory()
 
 
 @router.get("/", response_model=ConversationListResponse)

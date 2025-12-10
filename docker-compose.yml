@@ -22,6 +22,7 @@ services:
       - LLM_PROVIDER=${LLM_PROVIDER:-openai}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - LLM_MODEL=${LLM_MODEL:-gpt-4}
       - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
       - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-1024}
@@ -46,9 +47,14 @@ services:
       # RAG Defaults
       - DEFAULT_TOP_K=${DEFAULT_TOP_K:-5}
       - DEFAULT_SIMILARITY_THRESHOLD=${DEFAULT_SIMILARITY_THRESHOLD:-0.7}
+
+      # Chunking Configuration
+      - CHUNKS_DIRECTORY=/app/chunks
     volumes:
       # Persist data (database and vector store)
       - rag-data:/app/data
+      # Mount chunks directory
+      - ./chunks:/app/chunks:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()"]
@@ -72,16 +78,20 @@ services:
       - LLM_PROVIDER=${LLM_PROVIDER:-openai}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - LLM_MODEL=${LLM_MODEL:-gpt-4}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-small}
       - DATABASE_URL=sqlite+aiosqlite:///./data/rag.db
       - CHROMA_PERSIST_DIRECTORY=/app/data/chroma
       - API_HOST=0.0.0.0
       - API_PORT=8000
+      - CHUNKS_DIRECTORY=/app/chunks
     volumes:
       # Mount source code for development
       - ./src:/app/src:ro
       - rag-data-dev:/app/data
+      # Mount chunks directory
+      - ./chunks:/app/chunks:ro
     command: ["uvicorn", "src.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     profiles:
       - dev

@@ -12,14 +12,15 @@ class Settings(BaseSettings):
 
     rag_implementation: Literal["langchain", "langgraph"] = "langchain"
 
-    llm_provider: Literal["openai", "anthropic"] = "openai"
+    llm_provider: Literal["openai", "anthropic", "gemini"] = "openai"
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
+    gemini_api_key: str | None = None
     llm_model: str = "gpt-4"
     llm_temperature: float = 0.7
     llm_max_tokens: int = 1024
 
-    embedding_provider: Literal["openai"] = "openai"
+    embedding_provider: Literal["openai", "gemini"] = "openai"
     embedding_model: str = "text-embedding-3-small"
 
     vector_store_provider: Literal["chroma"] = "chroma"
@@ -34,6 +35,8 @@ class Settings(BaseSettings):
 
     default_top_k: int = 5
     default_similarity_threshold: float = 0.7
+
+    chunks_directory: str = "./chunks"
 
     class Config:
         """Pydantic config."""

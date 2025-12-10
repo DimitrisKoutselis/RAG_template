@@ -9,10 +9,21 @@ from src.presentation.api.schemas.chat_schemas import (
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
+# Controller factory - will be set by main.py during app initialization
+_controller_factory: callable = None
+
+
+def set_chat_controller_factory(factory: callable) -> None:
+    """Set the controller factory function."""
+    global _controller_factory
+    _controller_factory = factory
+
 
 def get_chat_controller() -> ChatController:
-    """Dependency injection placeholder for chat controller."""
-    raise NotImplementedError("Chat controller not configured")
+    """Dependency injection for chat controller."""
+    if _controller_factory is None:
+        raise NotImplementedError("Chat controller not configured")
+    return _controller_factory()
 
 
 @router.post("/", response_model=ChatResponse)
